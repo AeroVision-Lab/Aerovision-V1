@@ -11,6 +11,7 @@ from app.core import settings, get_logger
 from app.schemas.request import ReviewRequest
 from app.schemas.response import ReviewResponse
 from app.services import get_review_service, ReviewService
+from app.api.deps import request_counter
 
 router = APIRouter()
 logger = get_logger("api.review")
@@ -60,6 +61,9 @@ async def review_image(
     # 执行审核
     response = await review_service.review(request)
 
+    # 计数
+    request_counter.increment(success=response.success)
+
     # 发送回调
     callback_url = request.callback_url or settings.backend_callback_url
     if callback_url:
@@ -94,6 +98,9 @@ async def review_images_batch(
     for request in requests:
         response = await review_service.review(request)
         responses.append(response)
+
+        # 计数
+        request_counter.increment(success=response.success)
 
         # 发送回调
         callback_url = request.callback_url or settings.backend_callback_url

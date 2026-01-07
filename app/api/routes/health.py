@@ -8,6 +8,7 @@ from fastapi import APIRouter
 from app.core import settings
 from app.schemas.response import HealthResponse
 from app.services import get_review_service
+from app.api.deps import request_counter
 
 router = APIRouter()
 
@@ -32,7 +33,7 @@ async def health_check() -> HealthResponse:
             pass
 
     # 模型状态
-    review_service = get_review_s   ervice()
+    review_service = get_review_service()
     model_status = review_service.get_model_status()
 
     return HealthResponse(
@@ -43,3 +44,13 @@ async def health_check() -> HealthResponse:
         gpu_memory_used=gpu_memory_used,
         gpu_memory_total=gpu_memory_total,
     )
+
+
+@router.get("/stats")
+async def get_stats() -> dict:
+    """
+    获取请求统计
+
+    返回请求计数、成功/失败数、运行时间等
+    """
+    return request_counter.get_stats()
