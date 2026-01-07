@@ -32,7 +32,7 @@ training:
     type: "AdamW"
 
     # 初始学习率
-    lr0: 0.001
+    lr0: 0.003
 
     # SGD动量 或 Adam beta1
     momentum: 0.937

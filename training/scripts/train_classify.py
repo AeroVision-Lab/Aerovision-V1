@@ -196,7 +196,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         '--patience',
         type=int,
-        default=50,
+        default=0,
         help='Early stopping patience (epochs without improvement)'
     )
 
@@ -729,7 +729,7 @@ def main() -> None:
         'dropout': config_obj.get('training.regularization.dropout') if config_obj.get('training.regularization.dropout') is not None else (args.dropout or 0.0),
 
         # Early stopping
-        'patience': config_obj.get('training.early_stopping.patience') or args.patience or 50,
+        'patience': config_obj.get('training.early_stopping.patience') or args.patience or 0,
 
         # Warmup
         'warmup_epochs': config_obj.get('training.warmup.epochs') or args.warmup_epochs or 3.0,
