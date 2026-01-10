@@ -24,6 +24,7 @@ from app.schemas.response import (
     QualityResult,
     QualityDetails,
     AircraftResult,
+    ClassPrediction,
     RegistrationResult,
     OcclusionResult,
     ViolationResult,
@@ -134,23 +135,50 @@ class ReviewService:
 
         img_array = np.array(image)
 
-        # 机型分类
-        type_result = self._classifier.classify(img_array)
-        is_aircraft = type_result["confidence"] >= settings.classifier_confidence_threshold
+        # 机型分类 (Top-3)
+        type_result = self._classifier.predict(img_array, top_k=3)
+        top1_type = type_result.get("top1")
+        is_aircraft = type_result.get("is_confident", False)
 
-        # 航司分类
+        # 构建机型 Top-3
+        type_top3 = None
+        if type_result.get("success") and type_result.get("top_k"):
+            type_top3 = [
+                ClassPrediction(
+                    class_id=p["class_id"],
+                    class_name=p["class_name"],
+                    confidence=p["confidence"]
+                )
+                for p in type_result["top_k"][:3]
+            ]
+
+        # 航司分类 (Top-3)
         airline_result = None
+        airline_top3 = None
         if self._airline_classifier and is_aircraft:
-            airline_result = self._airline_classifier.classify(img_array)
+            airline_result = self._airline_classifier.predict(img_array, top_k=3)
+            if airline_result.get("success") and airline_result.get("top_k"):
+                airline_top3 = [
+                    ClassPrediction(
+                        class_id=p["class_id"],
+                        class_name=p["class_name"],
+                        confidence=p["confidence"]
+                    )
+                    for p in airline_result["top_k"][:3]
+                ]
+
+        top1_airline = airline_result.get("top1") if airline_result else None
 
         return AircraftResult(
             passed=is_aircraft,
             is_aircraft=is_aircraft,
-            confidence=type_result["confidence"],
-            aircraft_type=type_result.get("label") if is_aircraft else None,
-            aircraft_type_confidence=type_result["confidence"],
-            airline=airline_result.get("label") if airline_result else None,
-            airline_confidence=airline_result.get("confidence") if airline_result else None,
+            confidence=top1_type["confidence"] if top1_type else 0.0,
+            aircraft_type=top1_type.get("class_name") if top1_type and is_aircraft else None,
+            aircraft_type_confidence=top1_type["confidence"] if top1_type else None,
+            aircraft_type_top3=type_top3,
+            airline=top1_airline.get("class_name") if top1_airline else None,
+            airline_confidence=top1_airline.get("confidence") if top1_airline else None,
+            airline_top3=airline_top3,
             reason=None if is_aircraft else "未检测到飞机或置信度过低",
         )
 

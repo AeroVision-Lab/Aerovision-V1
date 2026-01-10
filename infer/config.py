@@ -13,25 +13,39 @@ from dataclasses import dataclass, field
 @dataclass
 class ModelConfig:
     """模型配置"""
-    # 模型文件路径
-    aircraft_classifier: str = "aircraft_classifier.pt"
-    airline_classifier: str = "airline_classifier.pt"
-    registration_detector: str = "registration_detector.pt"
+    # 模型文件路径（可通过环境变量覆盖）
+    aircraft_classifier: str = field(
+        default_factory=lambda: os.getenv("AIRCRAFT_CLASSIFIER_MODEL", "aircraft_classifier.pt")
+    )
+    airline_classifier: str = field(
+        default_factory=lambda: os.getenv("AIRLINE_CLASSIFIER_MODEL", "airline_classifier.pt")
+    )
+    registration_detector: str = field(
+        default_factory=lambda: os.getenv("REGISTRATION_DETECTOR_MODEL", "registration_detector.pt")
+    )
 
     # 推理参数
     classifier_imgsz: int = 224
     detector_imgsz: int = 640
-    classifier_conf: float = 0.5
-    detector_conf: float = 0.25
-    detector_iou: float = 0.45
+    classifier_conf: float = field(
+        default_factory=lambda: float(os.getenv("CLASSIFIER_CONFIDENCE_THRESHOLD", "0.5"))
+    )
+    detector_conf: float = field(
+        default_factory=lambda: float(os.getenv("DETECTOR_CONF", "0.25"))
+    )
+    detector_iou: float = field(
+        default_factory=lambda: float(os.getenv("DETECTOR_IOU", "0.45"))
+    )
 
 
 @dataclass
 class OCRConfig:
     """OCR 配置"""
-    lang: str = "en"
+    lang: str = field(default_factory=lambda: os.getenv("OCR_LANG", "en"))
     rec_model_name: str = "PP-OCRv4_server_rec_doc"
-    min_confidence: float = 0.5
+    min_confidence: float = field(
+        default_factory=lambda: float(os.getenv("OCR_MIN_CONFIDENCE", "0.5"))
+    )
     min_chars: int = 4
     max_chars: int = 10
     whitelist: str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"

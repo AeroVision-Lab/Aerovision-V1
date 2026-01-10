@@ -25,18 +25,31 @@ class QualityResult(BaseModel):
     reason: Optional[str] = Field(default=None, description="未通过原因")
 
 
+class ClassPrediction(BaseModel):
+    """分类预测结果"""
+    class_id: int = Field(description="类别 ID")
+    class_name: str = Field(description="类别名称")
+    confidence: float = Field(ge=0, le=1, description="置信度")
+
+
 class AircraftResult(BaseModel):
     """飞机识别结果"""
     passed: bool = Field(description="是否通过飞机识别审核")
     is_aircraft: bool = Field(description="是否包含飞机")
     confidence: float = Field(ge=0, le=1, description="识别置信度")
-    aircraft_type: Optional[str] = Field(default=None, description="飞机型号")
+    aircraft_type: Optional[str] = Field(default=None, description="飞机型号 (Top-1)")
     aircraft_type_confidence: Optional[float] = Field(
         default=None, ge=0, le=1, description="机型识别置信度"
     )
-    airline: Optional[str] = Field(default=None, description="航空公司")
+    aircraft_type_top3: Optional[List[ClassPrediction]] = Field(
+        default=None, description="机型识别 Top-3 预测"
+    )
+    airline: Optional[str] = Field(default=None, description="航空公司 (Top-1)")
     airline_confidence: Optional[float] = Field(
         default=None, ge=0, le=1, description="航司识别置信度"
+    )
+    airline_top3: Optional[List[ClassPrediction]] = Field(
+        default=None, description="航司识别 Top-3 预测"
     )
     reason: Optional[str] = Field(default=None, description="未通过原因")
 
@@ -131,9 +144,21 @@ class ReviewResponse(BaseModel):
                         "aircraft": {
                             "passed": True,
                             "is_aircraft": True,
-                            "confidence": 0.98,
+                            "confidence": 0.95,
                             "aircraft_type": "Boeing 737-800",
-                            "airline": "China Eastern"
+                            "aircraft_type_confidence": 0.95,
+                            "aircraft_type_top3": [
+                                {"class_id": 12, "class_name": "Boeing 737-800", "confidence": 0.95},
+                                {"class_id": 8, "class_name": "Boeing 737-700", "confidence": 0.03},
+                                {"class_id": 15, "class_name": "Boeing 737 MAX 8", "confidence": 0.01}
+                            ],
+                            "airline": "China Eastern",
+                            "airline_confidence": 0.92,
+                            "airline_top3": [
+                                {"class_id": 5, "class_name": "China Eastern", "confidence": 0.92},
+                                {"class_id": 3, "class_name": "Shanghai Airlines", "confidence": 0.05},
+                                {"class_id": 8, "class_name": "China Southern", "confidence": 0.02}
+                            ]
                         },
                         "registration": {
                             "passed": False,
