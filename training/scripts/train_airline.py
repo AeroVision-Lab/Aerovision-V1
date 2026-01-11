@@ -715,78 +715,81 @@ def main() -> None:
         data_path = '../data/splits/latest/aerovision/airline'
 
     # Extract training configuration with defaults
-    # Priority: command-line args > config yaml > defaults
+    # 优先级：命令行参数 > config yaml > 默认值
+    # 注意：使用显式 None 检查而非 or 运算符，避免 0 值被错误处理
+
+    def get_config_value(config_key: str, arg_value, default):
+        """
+        获取配置值，正确处理 0 和 False 等 falsy 值。
+        优先级：命令行参数 > config yaml > 默认值
+        """
+        # 命令行参数优先（如果用户显式指定）
+        if arg_value is not None:
+            return arg_value
+        # 然后是配置文件
+        config_val = config_obj.get(config_key)
+        if config_val is not None:
+            return config_val
+        # 最后是默认值
+        return default
+
     config = {
         # Model configuration
-        'model': args.model or config_obj.get('airline_training.model.name') or 'yolov8m-cls.pt',
-        'resume': args.resume or config_obj.get('airline_training.resume') or None,
+        'model': get_config_value('airline_training.model.name', args.model, 'yolov8m-cls.pt'),
+        'resume': get_config_value('airline_training.resume', args.resume, None),
 
         # Data configuration
         'data': data_path,
 
         # Training parameters
-        'epochs': args.epochs or config_obj.get('airline_training.epochs') or 100,
-        'batch_size': args.batch_size or config_obj.get('airline_training.batch_size') or 32,
-        'imgsz': args.imgsz or config_obj.get('airline_training.image_size') or 224,
+        'epochs': get_config_value('airline_training.epochs', args.epochs, 100),
+        'batch_size': get_config_value('airline_training.batch_size', args.batch_size, 32),
+        'imgsz': get_config_value('airline_training.image_size', args.imgsz, 224),
 
         # Optimizer
-        'lr0': args.lr0 or config_obj.get('airline_training.optimizer.lr0') or 0.001,
-        'optimizer': args.optimizer or config_obj.get('airline_training.optimizer.type') or 'AdamW',
-        'momentum': args.momentum or config_obj.get('airline_training.optimizer.momentum') or 0.937,
-        'weight_decay': args.weight_decay or config_obj.get('airline_training.optimizer.weight_decay') or 0.0005,
+        'lr0': get_config_value('airline_training.optimizer.lr0', args.lr0, 0.001),
+        'optimizer': get_config_value('airline_training.optimizer.type', args.optimizer, 'AdamW'),
+        'momentum': get_config_value('airline_training.optimizer.momentum', args.momentum, 0.937),
+        'weight_decay': get_config_value('airline_training.optimizer.weight_decay', args.weight_decay, 0.0005),
 
         # Learning rate scheduler
-        'cos_lr': args.cos_lr if args.cos_lr is not None else (
-            config_obj.get('airline_training.scheduler.cosine') if config_obj.get('airline_training.scheduler.cosine') is not None else True
-        ),
-        'lrf': args.lrf or config_obj.get('airline_training.scheduler.lrf') or 0.01,
+        'cos_lr': get_config_value('airline_training.scheduler.cosine', args.cos_lr, True),
+        'lrf': get_config_value('airline_training.scheduler.lrf', args.lrf, 0.01),
 
-        # Regularization
-        'dropout': args.dropout if args.dropout is not None else (
-            config_obj.get('airline_training.regularization.dropout') if config_obj.get('airline_training.regularization.dropout') is not None else 0.1
-        ),
+        # Regularization - 注意 dropout 可以为 0
+        'dropout': get_config_value('airline_training.regularization.dropout', args.dropout, 0.1),
 
-        # Early stopping
-        'patience': args.patience or config_obj.get('airline_training.early_stopping.patience') or 30,
+        # Early stopping - 注意 patience 为 0 表示禁用早停
+        'patience': get_config_value('airline_training.early_stopping.patience', args.patience, 30),
 
-        # Warmup
-        'warmup_epochs': args.warmup_epochs or config_obj.get('airline_training.warmup.epochs') or 3.0,
+        # Warmup - 注意 warmup_epochs 为 0 表示不预热
+        'warmup_epochs': get_config_value('airline_training.warmup.epochs', args.warmup_epochs, 3.0),
 
         # Device
-        'device': args.device or config_obj.get('device.default') or '0',
-        'workers': args.workers or config_obj.get('airline_training.workers') or 8,
-        'amp': args.amp if args.amp is not None else (
-            config_obj.get('airline_training.amp') if config_obj.get('airline_training.amp') is not None else True
-        ),
+        'device': get_config_value('device.default', args.device, '0'),
+        'workers': get_config_value('airline_training.workers', args.workers, 8),
+        'amp': get_config_value('airline_training.amp', args.amp, True),
 
         # Reproducibility
-        'seed': args.seed or config_obj.get('seed.random') or 42,
+        'seed': get_config_value('seed.random', args.seed, 42),
 
         # Saving
-        'project': args.project or config_obj.get('airline_training.output.project') or '../output/airline',
-        'name': args.name or config_obj.get('airline_training.output.name') or 'airline_classifier',
-        'save_period': args.save_period if args.save_period is not None else (
-            config_obj.get('airline_training.save_period') if config_obj.get('airline_training.save_period') is not None else -1
-        ),
+        'project': get_config_value('airline_training.output.project', args.project, '../output/airline'),
+        'name': get_config_value('airline_training.output.name', args.name, 'airline_classifier'),
+        'save_period': get_config_value('airline_training.save_period', args.save_period, -1),
 
         # Checkpoint directory
-        'checkpoint_dir': args.checkpoint_dir or config_obj.get('airline_checkpoints.dir') or config_obj.get('checkpoints.airline') or '../ckpt/airline',
+        'checkpoint_dir': get_config_value('checkpoints.airline', args.checkpoint_dir, '../ckpt/airline'),
 
         # Log directory
-        'log_dir': args.log_dir or config_obj.get('airline_checkpoints.log_dir') or config_obj.get('logs.airline') or '../logs/airline',
+        'log_dir': get_config_value('logs.airline', args.log_dir, '../logs/airline'),
 
         # Validation and plots
-        'val': args.val if args.val is not None else (
-            config_obj.get('airline_training.validation.enabled') if config_obj.get('airline_training.validation.enabled') is not None else True
-        ),
-        'plots': args.plots if args.plots is not None else (
-            config_obj.get('airline_training.plots') if config_obj.get('airline_training.plots') is not None else True
-        ),
+        'val': get_config_value('airline_training.validation.enabled', args.val, True),
+        'plots': get_config_value('airline_training.plots', args.plots, True),
 
         # TensorBoard logging
-        'tensorboard': args.tensorboard if args.tensorboard is not None else (
-            config_obj.get('airline_training.tensorboard') if config_obj.get('airline_training.tensorboard') is not None else True
-        ),
+        'tensorboard': get_config_value('airline_training.tensorboard', args.tensorboard, True),
     }
 
     # Resolve data path

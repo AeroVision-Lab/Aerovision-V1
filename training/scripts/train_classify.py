@@ -702,67 +702,82 @@ def main() -> None:
 
     # Extract training configuration with defaults
     # 优先级：config yaml > 命令行参数 > 默认值
+    # 注意：使用 config.get(key, default) 而非 config.get(key) or default
+    # 因为 0 or default 会返回 default 而非 0
+
+    def get_config_value(config_key: str, arg_value, default):
+        """
+        获取配置值，正确处理 0 和 False 等 falsy 值。
+        优先级：config yaml > 命令行参数 > 默认值
+        """
+        config_val = config_obj.get(config_key)
+        if config_val is not None:
+            return config_val
+        if arg_value is not None:
+            return arg_value
+        return default
+
     config = {
         # Model configuration - resolve model path from config
-        'model': config_obj.get('training.model.name') or args.model or 'yolov8n-cls.pt',
-        'resume': config_obj.get('training.resume') or args.resume or None,
+        'model': get_config_value('training.model.name', args.model, 'yolov8n-cls.pt'),
+        'resume': get_config_value('training.resume', args.resume, None),
 
         # Data configuration (must be a directory for classification)
         'data': data_path,
 
         # Training parameters
-        'epochs': config_obj.get('training.epochs') or args.epochs or 100,
-        'batch_size': config_obj.get('training.batch_size') or args.batch_size or 32,
-        'imgsz': config_obj.get('training.image_size') or args.imgsz or 224,
+        'epochs': get_config_value('training.epochs', args.epochs, 100),
+        'batch_size': get_config_value('training.batch_size', args.batch_size, 32),
+        'imgsz': get_config_value('training.image_size', args.imgsz, 224),
 
         # Optimizer
-        'lr0': config_obj.get('training.optimizer.lr0') or args.lr0 or 0.001,
-        'optimizer': config_obj.get('training.optimizer.type') or args.optimizer or 'AdamW',
-        'momentum': config_obj.get('training.optimizer.momentum') or args.momentum or 0.937,
-        'weight_decay': config_obj.get('training.optimizer.weight_decay') or args.weight_decay or 0.0005,
+        'lr0': get_config_value('training.optimizer.lr0', args.lr0, 0.001),
+        'optimizer': get_config_value('training.optimizer.type', args.optimizer, 'AdamW'),
+        'momentum': get_config_value('training.optimizer.momentum', args.momentum, 0.937),
+        'weight_decay': get_config_value('training.optimizer.weight_decay', args.weight_decay, 0.0005),
 
         # Learning rate scheduler
-        'cos_lr': config_obj.get('training.scheduler.cosine') if config_obj.get('training.scheduler.cosine') is not None else (args.cos_lr if hasattr(args, 'cos_lr') else True),
-        'lrf': config_obj.get('training.scheduler.lrf') or args.lrf or 0.01,
+        'cos_lr': get_config_value('training.scheduler.cosine', getattr(args, 'cos_lr', None), True),
+        'lrf': get_config_value('training.scheduler.lrf', args.lrf, 0.01),
 
-        # Regularization
-        'dropout': config_obj.get('training.regularization.dropout') if config_obj.get('training.regularization.dropout') is not None else (args.dropout or 0.0),
+        # Regularization - 注意 dropout 可以为 0
+        'dropout': get_config_value('training.regularization.dropout', args.dropout, 0.0),
 
-        # Early stopping
-        'patience': config_obj.get('training.early_stopping.patience') or args.patience or 50,
+        # Early stopping - 注意 patience 为 0 表示禁用早停
+        'patience': get_config_value('training.early_stopping.patience', args.patience, 50),
 
-        # Warmup
-        'warmup_epochs': config_obj.get('training.warmup.epochs') or args.warmup_epochs or 3.0,
+        # Warmup - 注意 warmup_epochs 为 0 表示不预热
+        'warmup_epochs': get_config_value('training.warmup.epochs', args.warmup_epochs, 3.0),
 
         # Device
-        'device': config_obj.get('device.default') or args.device or '0',
-        'workers': config_obj.get('training.workers') or args.workers or 8,
-        'amp': config_obj.get('training.amp') if config_obj.get('training.amp') is not None else (args.amp if hasattr(args, 'amp') else True),
+        'device': get_config_value('device.default', args.device, '0'),
+        'workers': get_config_value('training.workers', args.workers, 8),
+        'amp': get_config_value('training.amp', getattr(args, 'amp', None), True),
 
         # Reproducibility
-        'seed': config_obj.get('seed.random') or args.seed or 42,
+        'seed': get_config_value('seed.random', args.seed, 42),
 
         # Saving - resolve all paths relative to training/ directory
         # Note: timestamp will be added to name later
-        'project': config_obj.get('training.output.project') or args.project or '../output/classify',
-        'name': config_obj.get('training.output.name') or args.name or 'aircraft_classifier',
-        'save_period': config_obj.get('training.save_period') if config_obj.get('training.save_period') is not None else (args.save_period or -1),
+        'project': get_config_value('training.output.project', args.project, '../output/classify'),
+        'name': get_config_value('training.output.name', args.name, 'aircraft_classifier'),
+        'save_period': get_config_value('training.save_period', args.save_period, -1),
 
         # Store timestamp for directory naming
         'timestamp': None,  # Will be set later
 
         # Checkpoint directory
-        'checkpoint_dir': config_obj.get('checkpoints.classify') or args.checkpoint_dir or '../ckpt/classify',
+        'checkpoint_dir': get_config_value('checkpoints.classify', args.checkpoint_dir, '../ckpt/classify'),
 
         # Log directory
-        'log_dir': config_obj.get('logs.classify') or args.log_dir or '../logs/classify',
+        'log_dir': get_config_value('logs.classify', args.log_dir, '../logs/classify'),
 
         # Validation and plots
-        'val': config_obj.get('training.validation.enabled') if config_obj.get('training.validation.enabled') is not None else (args.val if hasattr(args, 'val') else True),
-        'plots': config_obj.get('training.plots') if config_obj.get('training.plots') is not None else (args.plots if hasattr(args, 'plots') else True),
+        'val': get_config_value('training.validation.enabled', getattr(args, 'val', None), True),
+        'plots': get_config_value('training.plots', getattr(args, 'plots', None), True),
 
         # TensorBoard logging
-        'tensorboard': config_obj.get('training.tensorboard') if config_obj.get('training.tensorboard') is not None else (args.tensorboard if hasattr(args, 'tensorboard') else True),
+        'tensorboard': get_config_value('training.tensorboard', getattr(args, 'tensorboard', None), True),
     }
 
     # Helper function to resolve config paths

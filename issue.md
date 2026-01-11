@@ -336,3 +336,81 @@ config.get_path('data.splits.root')
 ---
 
 **评价：这不是一个成熟的项目，这是一个原型验证阶段的代码被错误地当成了正式项目。**
+
+---
+
+## 补充问题（2026-01-11 更新）
+
+### 16. 配置系统浅拷贝漏洞
+
+**文件**: `training/configs/config_loader.py:113-115`
+
+**问题描述**: `to_dict()` 方法使用浅拷贝，外部代码可以修改返回的字典从而影响原始配置。
+
+```python
+def to_dict(self) -> Dict[str, Any]:
+    return self._config.copy()  # 浅拷贝！
+```
+
+**详见**: `training/configs/ISSUES.md`
+
+---
+
+### 17. 配置模块加载不完整
+
+**文件**: `training/configs/config_loader.py:185`
+
+**问题描述**: 硬编码的模块列表缺少 3 个实际存在的配置文件。
+
+**缺失的模块**: `airline`, `inference`, `training_params`
+
+**详见**: `training/configs/ISSUES.md`
+
+---
+
+### 18. 配置键冲突
+
+**问题描述**: 多个配置文件定义了相同的顶层键，后加载的会覆盖先加载的。
+
+**详见**: `training/configs/ISSUES.md`
+
+---
+
+### 19. 训练脚本 args 默认值应从 config 读取
+
+**问题描述**: 训练脚本的 argparse 默认值硬编码在代码中，应该从配置文件读取。
+
+**当前代码**:
+```python
+parser.add_argument('--epochs', type=int, default=100)
+parser.add_argument('--batch', type=int, default=16)
+```
+
+**建议修复**:
+```python
+config = load_config()
+parser.add_argument('--epochs', type=int,
+    default=config.get('training.epochs', 100))
+```
+
+**详见**: `training/configs/ISSUES.md`
+
+---
+
+## 更新后的问题统计
+
+| 问题类别 | 数量 | 严重程度 |
+|----------|------|----------|
+| 致命问题 | 5 | 🔴 项目无法运行 |
+| 配置混乱 | 7 (+4) | 🟠 维护噩梦 |
+| 代码质量 | 3 | 🟡 技术债 |
+| 数据流程 | 2 | 🟠 新人陷阱 |
+| 项目管理 | 2 | 🔴 根本原因 |
+
+**总计**: 19 个问题（原 15 个 + 新增 4 个）
+
+---
+
+## 相关文档
+
+- `training/configs/ISSUES.md` - 配置模块专项问题清单（19 个问题）

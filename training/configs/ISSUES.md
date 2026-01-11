@@ -336,3 +336,103 @@ config.get("model.v2")  # 会被解析为 config["model"]["v2"]，而非 config[
 - [ ] 添加缺失的模块到加载列表
 - [ ] 修正文件头注释路径
 - [ ] 移除 `save_config` 中的 `print` 语句
+- [x] 训练脚本 args 默认值改为从 config 读取 ✅ (2026-01-11)
+- [x] 修复 `or` 运算符处理 0 值的问题 ✅ (2026-01-11)
+
+---
+
+## 训练脚本与配置集成问题
+
+> 以下问题涉及训练脚本如何使用配置系统
+
+### 15. `or` 运算符无法正确处理 0 值
+
+**问题描述**: 使用 `or` 运算符设置默认值时，如果配置值为 `0`，会错误地返回默认值而非 `0`。
+
+**错误代码**:
+```python
+patience = config.get('training.patience') or 50
+# 如果 config 中 patience = 0，结果是 50 而不是 0！
+```
+
+**原因**: Python 中 `0` 是 falsy 值，`0 or 50` 返回 `50`。
+
+**建议修复**:
+```python
+# 方案1: 使用 get 的 default 参数
+patience = config.get('training.patience', 50)
+
+# 方案2: 显式检查 None
+patience_val = config.get('training.patience')
+patience = patience_val if patience_val is not None else 50
+
+# 方案3: 使用三元表达式
+patience = config.get('training.patience') ?? 50  # Python 没有 ??，需用方案1或2
+```
+
+**受影响的参数类型**:
+- `patience` - 早停耐心值，0 表示禁用早停
+- `warmup_epochs` - 预热轮数，0 表示不预热
+- `weight_decay` - 权重衰减，0 表示不使用
+- 其他可能为 0 的数值参数
+
+**影响的文件**:
+- `train_classify.py`
+- `train_detection.py`
+- `train_airline.py`
+
+---
+
+### 16. 训练脚本 args 默认值应从 config 读取
+
+**问题描述**: 训练脚本的 argparse 默认值硬编码在代码中，应该从配置文件读取。
+
+**当前代码** (`train_classify.py`):
+```python
+parser.add_argument('--epochs', type=int, default=100)
+parser.add_argument('--batch', type=int, default=16)
+parser.add_argument('--imgsz', type=int, default=640)
+parser.add_argument('--lr0', type=float, default=0.01)
+```
+
+**建议修复**:
+```python
+from configs import load_config
+
+config = load_config()
+
+parser.add_argument('--epochs', type=int,
+    default=config.get('training.epochs', 100))
+parser.add_argument('--batch', type=int,
+    default=config.get('training.batch_size', 16))
+parser.add_argument('--imgsz', type=int,
+    default=config.get('training.imgsz', 640))
+parser.add_argument('--lr0', type=float,
+    default=config.get('training.optimizer.lr0', 0.01))
+```
+
+**影响的文件**:
+- `train_classify.py`
+- `train_detection.py`
+- `train_airline.py`
+
+**好处**:
+- 统一配置来源，避免代码和配置不一致
+- 修改默认值只需改配置文件，无需改代码
+- 命令行参数仍可覆盖配置文件的值
+
+---
+
+### 17. 配置路径解析函数不统一
+
+**问题描述**: 不同脚本使用不同的方式解析配置路径。
+
+| 脚本 | 使用的函数 |
+|------|-----------|
+| `train_classify.py` | `_resolve_training_path()` |
+| `train_detection.py` | `resolve_config_path()` |
+| `train_airline.py` | `_resolve_training_path()` |
+
+**影响**: 维护困难，行为可能不一致。
+
+**建议修复**: 统一使用 `config_loader.py` 中的 `get_path()` 方法。
