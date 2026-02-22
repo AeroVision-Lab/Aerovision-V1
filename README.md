@@ -560,7 +560,7 @@ python verify_configs.py
 ```bash
 # YOLOv8 分类模型
 wget https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8m-cls.pt \
-     -O model/yolov8m-cls.pt
+     -O training/model/yolov8m-cls.pt
 
 # YOLOv8 检测模型
 wget https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8m.pt \
