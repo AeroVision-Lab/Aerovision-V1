@@ -28,7 +28,7 @@ review:
   border_width: 1
 
 # 输出配置
-output:
+review_output:
   # 保存路径模板（{timestamp}会被替换为实际时间）
   save_path: "../logs/crop_review_{timestamp}.png"
 

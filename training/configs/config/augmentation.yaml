@@ -102,7 +102,7 @@ color:
     prob: 0.05
 
 # 质量变换
-quality:
+augmentation_quality:
   # 模糊
   blur:
     enabled: true

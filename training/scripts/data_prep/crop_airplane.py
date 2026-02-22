@@ -81,7 +81,7 @@ def crop_aircraft(
     # 优先使用 paths.yaml 中的配置，如果没有则回退到 base.yaml
     input_dir = input_dir or config.get('data.raw') or config.get('paths.raw_images')
     output_dir = output_dir or config.get('data.processed.aircraft_crop.unsorted') or config.get('paths.aircraft_crop_unsorted')
-    conf_threshold = conf_threshold if conf_threshold is not None else config.get('detection.conf_threshold')
+    conf_threshold = conf_threshold if conf_threshold is not None else config.get('yolo_detection.conf_threshold')
     padding = padding if padding is not None else config.get('crop.padding')
     min_size = min_size if min_size is not None else config.get('crop.min_size')
 
@@ -111,7 +111,7 @@ def crop_aircraft(
         print("ℹ️ 使用CPU进行推理")
 
     # COCO 数据集中 airplane 的类别 ID
-    AIRPLANE_CLASS = config.get('detection.airplane_class_id')
+    AIRPLANE_CLASS = config.get('yolo_detection.airplane_class_id')
 
     # 统计
     total = 0
@@ -196,7 +196,7 @@ def crop_aircraft(
             # 裁剪并保存
             cropped = img.crop((int(x1), int(y1), int(x2), int(y2)))
             output_file = output_path / img_file.name
-            quality = config.get('output.quality', 95)
+            quality = config.get('crop_output.quality', 95)
             cropped.save(output_file, quality=quality)
             success += 1
 

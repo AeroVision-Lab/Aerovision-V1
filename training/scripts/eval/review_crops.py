@@ -102,7 +102,7 @@ def review_random_samples(
     plt.tight_layout()
 
     # 获取保存路径并替换时间戳占位符
-    save_path_template = config.get('logs.crop_review') or config.get('output.save_path') or config.get('paths.crop_review')
+    save_path_template = config.get('logs.crop_review') or config.get('review_output.save_path') or config.get('paths.crop_review')
 
     if save_path_template:
         # 生成时间戳

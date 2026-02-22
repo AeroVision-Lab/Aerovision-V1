@@ -1,33 +1,34 @@
 # Aerovision-V1 统一训练参数配置文件
 # 用于检测模型的训练参数统一管理
+# ⚠️ 重要：相对路径相对于 /training/configs 目录
 
 # ==================== 数据路径配置 ====================
-paths:
+training_params_paths:
   # 原始数据路径
-  data_root: "data"
-  raw_images: "data/labeled"
-  labels_csv: "data/labels.csv"
-  registration_labels: "data"
+  data_root: "../data"
+  raw_images: "../data/labeled"
+  labels_csv: "../data/labels.csv"
+  registration_labels: "../data"
 
   # 处理后的数据路径
-  processed_root: "data/processed"
-  detection: "data/processed/detection"
+  processed_root: "../data/processed"
+  detection: "../data/processed/detection"
 
   # 训练数据路径
-  train_data: "data/processed/detection/train"
-  val_data: "data/processed/detection/val"
-  test_data: "data/processed/detection/test"
+  train_data: "../data/processed/detection/train"
+  val_data: "../data/processed/detection/val"
+  test_data: "../data/processed/detection/test"
 
   # 标签文件路径
-  labels_dir: "data/processed/labels"
+  labels_dir: "../data/processed/labels"
 
   # 模型路径
-  model_root: "model"
-  pretrained_models: "."
-  checkpoints_root: "training/checkpoints"
+  model_root: "../model"
+  pretrained_models: "../model"
+  checkpoints_root: "../ckpt"
 
   # 日志路径
-  logs_root: "logs"
+  logs_root: "../logs"
 
 # ==================== 数据集划分配置 ====================
 dataset:
@@ -43,11 +44,11 @@ dataset:
   min_samples_per_class: 1
 
 # ==================== 检测模型配置 ====================
-detection:
+training_params_detection:
   # 模型配置
   model_size: "x"  # n, s, m, l, x - 推荐使用 x (YOLOv8x)
   task: "detect"
-  data_yaml: "data/processed/detection/dataset.yaml"
+  data_yaml: "../data/processed/detection/dataset.yaml"
 
   # 训练参数
   epochs: 50
@@ -94,13 +95,13 @@ detection:
   iou: 0.45
 
   # 保存设置
-  project: "training/checkpoints"
+  project: "../ckpt"
   name: "registration_detection"
   exist_ok: true
   save: true
 
 # ==================== OCR 配置 ====================
-ocr:
+training_params_ocr:
   # OCR引擎
   engine: "paddleocr"
 
@@ -125,7 +126,7 @@ ocr:
   cls_thresh: 0.9
 
 # ==================== 质量评估配置 ====================
-quality:
+training_params_quality:
   # 清晰度阈值
   clarity_threshold: 0.7
 
@@ -138,7 +139,7 @@ quality:
   max_block: 0.8
 
 # ==================== 日志配置 ====================
-logging:
+training_params_logging:
   level: "INFO"  # DEBUG, INFO, WARNING, ERROR
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
   save_to_file: true

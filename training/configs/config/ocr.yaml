@@ -203,7 +203,7 @@ detection_area:
   crop_padding: 0.1
 
 # 输出配置
-output:
+ocr_output:
   # 是否保存识别结果
   save_results: true
 
@@ -224,7 +224,7 @@ output:
   include_cropped_image: false
 
 # 批处理配置
-batch:
+ocr_batch:
   # 批处理大小
   batch_size: 8
 
@@ -235,7 +235,7 @@ batch:
   multiprocessing: false
 
 # 性能优化
-performance:
+ocr_performance:
   # 是否缓存模型
   cache_model: true
 

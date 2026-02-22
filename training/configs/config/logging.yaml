@@ -57,7 +57,7 @@ file:
   encoding: "utf-8"
 
 # 训练日志配置
-training:
+logging_training:
   # 是否启用训练日志
   enabled: true
 
@@ -245,7 +245,7 @@ formatters:
     include_message: true
 
 # 性能优化
-performance:
+logging_performance:
   # 是否使用异步日志
   async_logging: false
 

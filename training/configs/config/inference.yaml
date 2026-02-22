@@ -1,29 +1,29 @@
 # 推理后端配置文件
 
 # 模型配置
-models:
+inference_models:
   # YOLOv8检测模型（用于检测飞机和注册号）
   detector:
-    path: "training/checkpoints/registration_detection/weights/best.pt"
+    path: "../checkpoints/registration_detection/weights/best.pt"
     device: "cpu"  # 或 "cuda:0"
     conf_threshold: 0.01
     iou_threshold: 0.45
     max_det: 1000
 
 # PaddleOCR配置
-ocr:
+inference_ocr:
   use_angle_cls: true
   lang: "en"
   use_gpu: false
   show_log: false
 
 # 图像处理配置
-image:
+inference_image:
   padding: 10  # 裁剪注册号时添加的padding
   resize: null  # 不调整大小，保持原始尺寸
 
 # 输出配置
-output:
+inference_output:
   format: "json"  # 输出格式：json
   save_crops: false  # 是否保存裁剪的图片
-  crops_dir: "output/crops"
+  crops_dir: "../output/crops"

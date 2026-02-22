@@ -22,7 +22,7 @@ crop:
   square_crop: false
 
 # 输出配置
-output:
+crop_output:
   # JPEG输出质量 (1-100)
   quality: 100
 
@@ -47,7 +47,7 @@ image_extensions:
   - "*.BMP"
 
 # 批处理配置
-batch:
+crop_batch:
   # 是否启用批处理
   enabled: false
 

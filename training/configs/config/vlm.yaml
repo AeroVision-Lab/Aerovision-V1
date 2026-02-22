@@ -68,7 +68,7 @@ tasks:
     default_prompt: "quality"
 
 # 批处理配置
-batch:
+vlm_batch:
   # 批量处理大小
   size: 10
 
@@ -79,7 +79,7 @@ batch:
   interval: 100
 
 # 输出配置
-output:
+vlm_output:
   # 是否包含原始响应
   include_raw_response: false
 
@@ -90,7 +90,7 @@ output:
   include_metadata: true
 
 # 日志配置
-logging:
+vlm_logging:
   # 是否记录请求日志
   log_requests: true
 

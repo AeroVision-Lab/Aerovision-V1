@@ -67,7 +67,7 @@ labels:
   registration: "../data/processed/labeled/registration/registration_area"
 
 # 模型文件路径
-models:
+path_models:
   root: "../model"
   # 预训练模型（YOLOv8 分类）
   pretrained:
@@ -126,7 +126,7 @@ logs:
   crop_review: "../logs/crop_review_{timestamp}.png"
 
 # 训练输出路径
-output:
+path_output:
   root: "../output"
   # 分类训练输出
   classify: "../output/classify"
