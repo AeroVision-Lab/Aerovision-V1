@@ -58,16 +58,16 @@ statistics:
 # 过滤器
 filter:
   # 最小尺寸过滤
-  min_width: null
-  min_height: null
+  min_width: null  # null表示不限制最小宽度
+  min_height: null  # null表示不限制最小高度
 
   # 最大尺寸过滤
-  max_width: null
-  max_height: null
+  max_width: null  # null表示不限制最大宽度
+  max_height: null  # null表示不限制最大高度
 
   # 宽高比过滤
-  min_aspect_ratio: null  # 例如：0.5 (宽:高 = 1:2)
-  max_aspect_ratio: null  # 例如：2.0 (宽:高 = 2:1)
+  min_aspect_ratio: null  # null表示不限制最小宽高比，例如：0.5 (宽:高 = 1:2)
+  max_aspect_ratio: null  # null表示不限制最大宽高比，例如：2.0 (宽:高 = 2:1)
 
 # 排序方式
 sort:

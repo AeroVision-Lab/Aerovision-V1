@@ -121,7 +121,7 @@ wandb:
   project: "aerovision-v1"
 
   # 实体（用户名或团队名）
-  entity: null
+  entity: null  # null表示使用默认实体
 
   # 运行名称
   name: null  # null表示自动生成
@@ -130,13 +130,13 @@ wandb:
   id: null  # null表示自动生成
 
   # 笔记
-  notes: null
+  notes: null  # null表示无笔记
 
   # 标签
   tags: []
 
   # 运行组
-  group: null
+  group: null  # null表示不分组
 
   # 运行模式: online, offline, disabled
   mode: "online"

@@ -156,13 +156,13 @@ custom_model:
 stage_configs:
   # Stage 2: 单模型单任务（机型分类）
   stage2:
-    num_classes: null  # 从数据集自动推断
+    num_classes: null  # null表示从数据集自动推断类别数
     loss: "cross_entropy"
 
   # Stage 3: 单模型多Head（机型+航司）
   stage3:
-    num_type_classes: null
-    num_airline_classes: null
+    num_type_classes: null  # null表示从数据集自动推断机型类别数
+    num_airline_classes: null  # null表示从数据集自动推断航司类别数
     shared_backbone: true
 
   # Stage 4: 加清晰度Head
