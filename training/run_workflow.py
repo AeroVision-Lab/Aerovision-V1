@@ -57,7 +57,7 @@ class WorkflowRunner:
 
         # 检测操作系统
         self.is_windows = sys.platform.startswith('win')
-        self.python_cmd = "python" if self.is_windows else "python3"
+        self.python_cmd = sys.executable
 
         # Rich console
         if self.use_tui:
