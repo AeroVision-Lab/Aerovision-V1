@@ -50,10 +50,11 @@
 - 8GB+ GPU 显存
 
 **安装依赖**:
+**安装依赖**:
 ```bash
-cd training
 pip install -r requirements.txt
-```
+
+cd training
 
 **验证环境**:
 ```bash
