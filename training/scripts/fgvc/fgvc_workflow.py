@@ -180,7 +180,7 @@ def main() -> None:
 
         cmd = [
             sys.executable,
-            str(scripts_dir / "prepare_dataset.py"),
+            str(scripts_dir.parent / "data_prep" / "prepare_dataset.py"),
             "--labels",
             str(converted_base / "combined" / "labels.csv"),
             "--images",
@@ -215,7 +215,7 @@ def main() -> None:
 
         cmd = [
             sys.executable,
-            str(scripts_dir / "split_dataset.py"),
+            str(scripts_dir.parent / "data_prep" / "split_dataset.py"),
             "--prepare-dir",
             str(prepare_dir),
             "--output",
