@@ -54,3 +54,49 @@ experiment:
 
   # 实验标签
   tags: []
+
+# ========== 输出路径配置 ==========
+# 训练输出、检查点、日志的默认路径
+path_output:
+  # 训练输出根目录
+  root: "../output"
+
+  # 分类训练输出
+  classify: "../output/classify"
+
+  # 航司训练输出
+  airline: "../output/airline"
+
+  # 检测训练输出
+  detection: "../output/detection"
+
+# 检查点保存路径
+checkpoints:
+  # 检查点根目录
+  root: "../ckpt"
+
+  # 分类模型检查点
+  classify: "../ckpt/classify"
+
+  # 航司模型检查点
+  airline: "../ckpt/airline"
+
+  # 检测模型检查点
+  detection: "../ckpt/detection"
+
+# 日志路径
+logs:
+  # 日志根目录
+  root: "../logs"
+
+  # 分类训练日志
+  classify: "../logs/classify"
+
+  # 航司训练日志
+  airline: "../logs/airline"
+
+  # 检测训练日志
+  detection: "../logs/detection"
+
+  # 裁剪审查日志
+  crop_review: "../logs/crop_review_{timestamp}.png"

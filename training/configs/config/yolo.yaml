@@ -30,7 +30,7 @@ yolo_detection:
   classes: [4]  # None表示检测所有类别，[4]表示只检测飞机
 
 # 推理配置
-inference:
+yolo_inference:
   # 推理设备
   device: "cuda"  # cuda, cpu, 或具体GPU如 cuda:0
 
@@ -38,7 +38,7 @@ inference:
   batch_size: 1
 
   # 图片尺寸
-  imgsz: 640
+  image_size: 640
 
   # 是否使用半精度（FP16）
   half: false
@@ -46,55 +46,4 @@ inference:
   # 是否显示详细信息
   verbose: false
 
-# 训练配置（如果需要微调YOLO）
-train:
-  # 训练轮数
-  epochs: 100
-
-  # 批次大小
-  batch: 16
-
-  # 图片尺寸
-  imgsz: 640
-
-  # 学习率
-  lr0: 0.01
-  lrf: 0.01
-
-  # 动量
-  momentum: 0.937
-
-  # 权重衰减
-  weight_decay: 0.0005
-
-  # warmup
-  warmup_epochs: 3
-  warmup_momentum: 0.8
-  warmup_bias_lr: 0.1
-
-  # 数据增强
-  hsv_h: 0.015  # 色调
-  hsv_s: 0.7    # 饱和度
-  hsv_v: 0.4    # 明度
-  degrees: 0.0  # 旋转
-  translate: 0.1  # 平移
-  scale: 0.5    # 缩放
-  shear: 0.0    # 剪切
-  perspective: 0.0  # 透视
-  flipud: 0.0   # 上下翻转
-  fliplr: 0.5   # 左右翻转
-  mosaic: 1.0   # mosaic增强
-  mixup: 0.0    # mixup增强
-
-  # 保存配置
-  save: true
-  save_period: -1  # 每N个epoch保存一次，-1表示只保存最后和最好的
-
-  # 验证配置
-  val: true
-
-  # 早停
-  patience: 50
-
-  # 多GPU训练
-  workers: 8
+# 注意：YOLO 训练配置已移至 training.yaml，避免配置重复和冲突

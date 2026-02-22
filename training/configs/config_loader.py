@@ -1,4 +1,4 @@
-# training/config/config_loader.py
+# training/configs/config_loader.py
 """配置文件加载器 - 支持模块化配置结构"""
 
 import yaml
@@ -39,18 +39,25 @@ class Config:
         """支持属性式访问"""
         if key.startswith('_'):
             return object.__getattribute__(self, key)
-        return self._config.get(key)
+        if key in self._config:
+            return self._config[key]
+        raise AttributeError(f"Config has no attribute '{key}'")
 
-    def get(self, key: str, default: Any = None) -> Any:
+    def get(self, key: str, default: Any = None) -> Optional[Any]:
         """
         获取配置项
 
         Args:
             key: 配置键，支持点号分隔的嵌套键（如 'paths.data_root'）
+                 注意：键名本身不能包含点号，点号会被解析为层级分隔符
             default: 默认值
 
         Returns:
             配置值
+
+        Example:
+            >>> config.get('project.name')  # 获取 config['project']['name']
+            >>> config.get('nonexistent', 'default')  # 返回 'default'
         """
         keys = key.split('.')
         value = self._config
@@ -98,6 +105,9 @@ class Config:
 
         Args:
             updates: 要更新的配置字典
+
+        Note:
+            此方法不是线程安全的。如需在多线程环境中使用，请在外部加锁。
         """
         self._deep_update(self._config, updates)
 
@@ -233,21 +243,28 @@ def _deep_merge(base_dict: Dict, update_dict: Dict) -> Dict:
     return result
 
 
-def save_config(config: Config, save_path: str):
+def save_config(config: Config, save_path: str) -> Path:
     """
     保存配置到文件
 
     Args:
         config: Config对象
         save_path: 保存路径
+
+    Returns:
+        保存的文件路径
     """
+    import logging
+    logger = logging.getLogger(__name__)
+
     save_path = Path(save_path)
     save_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(save_path, 'w', encoding='utf-8') as f:
         yaml.dump(config.to_dict(), f, default_flow_style=False, allow_unicode=True)
 
-    print(f"配置已保存到: {save_path}")
+    logger.info(f"配置已保存到: {save_path}")
+    return save_path
 
 
 # 便捷函数：获取默认配置

@@ -40,7 +40,7 @@ import torch
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from configs import load_config
+from configs import load_config, setup_logger
 from training_utils import (
     FocalLoss,
     ConfidencePenalty,
@@ -56,48 +56,6 @@ from training_utils import (
 
 from ultralytics import YOLO
 from ultralytics.utils import LOGGER, colorstr
-
-
-def setup_logging(log_dir: Path) -> logging.Logger:
-    """
-    Configure structured logging for the training process.
-
-    Args:
-        log_dir: Directory to save log files.
-
-    Returns:
-        Configured logger instance.
-    """
-    log_dir.mkdir(parents=True, exist_ok=True)
-
-    # Create logger
-    logger = logging.getLogger("AircraftClassifier")
-    logger.setLevel(logging.DEBUG)
-
-    # Remove existing handlers
-    logger.handlers.clear()
-
-    # File handler - detailed logs
-    log_file = log_dir / f"train_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-    file_handler = logging.FileHandler(log_file, encoding="utf-8")
-    file_handler.setLevel(logging.DEBUG)
-    file_formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-    file_handler.setFormatter(file_formatter)
-    logger.addHandler(file_handler)
-
-    # Console handler - info level
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.INFO)
-    console_formatter = logging.Formatter(
-        "%(asctime)s - %(levelname)s - %(message)s", datefmt="%H:%M:%S"
-    )
-    console_handler.setFormatter(console_formatter)
-    logger.addHandler(console_handler)
-
-    return logger
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -1058,7 +1016,11 @@ def main() -> None:
 
     # Add timestamp subdirectory for this training session
     log_dir = log_dir / timestamp
-    logger = setup_logging(log_dir)
+    logger = setup_logger(
+        name="AircraftClassifier",
+        log_dir=log_dir,
+        config=config_obj
+    )
 
     # Log startup information
     logger.info("=" * 60)

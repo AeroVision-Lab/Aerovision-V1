@@ -38,49 +38,9 @@ import torch
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from configs import load_config
+from configs import load_config, setup_logger
 
 from ultralytics import YOLO
-
-
-def setup_logging(log_dir: Path) -> logging.Logger:
-    """
-    Configure structured logging for the training process.
-
-    Args:
-        log_dir: Directory to save log files.
-
-    Returns:
-        Configured logger instance.
-    """
-    log_dir.mkdir(parents=True, exist_ok=True)
-
-    logger = logging.getLogger("RegistrationDetector")
-    logger.setLevel(logging.DEBUG)
-    logger.handlers.clear()
-
-    # File handler
-    log_file = log_dir / f"train_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-    file_handler = logging.FileHandler(log_file, encoding='utf-8')
-    file_handler.setLevel(logging.DEBUG)
-    file_formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
-    file_handler.setFormatter(file_formatter)
-    logger.addHandler(file_handler)
-
-    # Console handler
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.INFO)
-    console_formatter = logging.Formatter(
-        '%(asctime)s - %(levelname)s - %(message)s',
-        datefmt='%H:%M:%S'
-    )
-    console_handler.setFormatter(console_formatter)
-    logger.addHandler(console_handler)
-
-    return logger
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -435,18 +395,18 @@ def main() -> None:
         'model': model_name,
         'resume': args.resume,
         'data': data_path,
-        'epochs': config_obj.get('training.detection.epochs') or args.epochs or 100,
-        'batch_size': config_obj.get('training.detection.batch_size') or args.batch_size or 16,
-        'imgsz': config_obj.get('training.detection.image_size') or args.imgsz or 640,
-        'lr0': config_obj.get('training.detection.lr0') or args.lr0 or 0.01,
-        'optimizer': args.optimizer or 'auto',
-        'momentum': args.momentum or 0.937,
-        'weight_decay': args.weight_decay or 0.0005,
-        'patience': config_obj.get('training.detection.patience') or args.patience or 20,
+        'epochs': config_obj.get('training.epochs') or args.epochs or 100,
+        'batch_size': config_obj.get('training.batch_size') or args.batch_size or 16,
+        'imgsz': config_obj.get('training.image_size') or args.imgsz or 640,
+        'lr0': config_obj.get('training.optimizer.lr0') or args.lr0 or 0.01,
+        'optimizer': config_obj.get('training.optimizer.type') or args.optimizer or 'auto',
+        'momentum': config_obj.get('training.optimizer.momentum') or args.momentum or 0.937,
+        'weight_decay': config_obj.get('training.optimizer.weight_decay') or args.weight_decay or 0.0005,
+        'patience': config_obj.get('training.early_stopping.patience') or args.patience or 20,
         'device': config_obj.get('device.default') or args.device or '0',
-        'workers': args.workers or 8,
+        'workers': config_obj.get('training.workers') or args.workers or 8,
         'seed': config_obj.get('seed.random') or args.seed or 42,
-        'project': resolve_config_path(config_obj.get('output.detection') or '../output/detection'),
+        'project': resolve_config_path(config_obj.get('training.output.project') or '../output/detection'),
         'name': f"registration_detector_{timestamp}",
         'save_period': args.save_period or 10,
         'checkpoint_dir': config_obj.get('checkpoints.detection') or '../ckpt/detection',
@@ -457,7 +417,11 @@ def main() -> None:
     if not Path(log_dir_path).is_absolute():
         log_dir_path = resolve_config_path(log_dir_path)
     log_dir = Path(log_dir_path) / timestamp
-    logger = setup_logging(log_dir)
+    logger = setup_logger(
+        name="RegistrationDetector",
+        log_dir=log_dir,
+        config=config_obj
+    )
 
     # Log startup information
     logger.info("=" * 60)
