@@ -54,16 +54,3 @@ experiment:
 
   # 实验标签
   tags: []
-
-# ========== 模块配置文件路径 ==========
-# 以下配置会从config子目录加载
-modules:
-  paths: "config/paths.yaml"
-  yolo: "config/yolo.yaml"
-  crop: "config/crop.yaml"
-  review: "config/review.yaml"
-  training: "config/training.yaml"
-  airline: "config/airline.yaml"
-  augmentation: "config/augmentation.yaml"
-  ocr: "config/ocr.yaml"
-  logging: "config/logging.yaml"

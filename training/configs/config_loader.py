@@ -111,8 +111,9 @@ class Config:
                 base_dict[key] = value
 
     def to_dict(self) -> Dict[str, Any]:
-        """转换为字典"""
-        return self._config.copy()
+        """转换为字典（深拷贝）"""
+        import copy
+        return copy.deepcopy(self._config)
 
     def __repr__(self) -> str:
         return f"Config({self._config})"
@@ -181,8 +182,12 @@ def load_config(
     if use_modular:
         # 确定要加载的模块
         if modules is None and load_all_modules:
-            # 加载所有模块
-            modules_to_load = ['paths', 'yolo', 'crop', 'review', 'training', 'augmentation', 'ocr', 'logging']
+            # 动态扫描config目录下的所有yaml文件
+            config_module_dir = configs_dir / "config"
+            if config_module_dir.exists():
+                modules_to_load = [f.stem for f in config_module_dir.glob("*.yaml")]
+            else:
+                modules_to_load = []
         elif modules is not None:
             modules_to_load = modules
         else:

@@ -1,138 +1,42 @@
 # 路径配置模块
 # ⚠️ 重要：所有相对路径都相对于 /training/configs 目录
 
-# 数据路径详细配置
+# 数据路径
 data:
-  # 原始数据路径（服务器）
-  server_data_root: "mnt/disk/Aerovision-V1-data"
-
-  # 本地数据路径
+  # 本地数据根目录
   local_data_root: "../data"
 
-  # 数据准备流程（prepare_dataset.py）
-  prepared:
-    # 输出根目录
-    root: "../data/prepared"
-    # 最新准备的数据集（需要手动更新时间戳，或保持为latest链接）
-    latest: "../data/prepared/latest"
-
-  # 数据集划分流程（split_dataset.py）
-  splits:
-    # 输出根目录
-    root: "../data/splits"
-    # 最新划分的数据集
-    latest: "../data/splits/latest"
-
-  # 原始图片
+  # 原始数据
   raw: "../data/raw"
 
-  # 处理后数据
+  # 准备好的数据
+  prepared:
+    root: "../data/prepared"
+
+  # 处理后的数据
   processed:
-    root: "../data/processed"
-
-    # 标注后的数据（用于数据集划分）
-    labeled:
-      root: "../data/processed/labeled"
-      images: "../data/processed/labeled/images"
-      labels: "../data/processed/labeled/labels.csv"
-      registration: "../data/processed/labeled/registration/registration_area"
-
-    # 裁剪后的飞机图片
+    # 飞机裁剪图片
     aircraft_crop:
-      root: "../data/processed/aircraft_crop"
       unsorted: "../data/processed/aircraft_crop/unsorted"
-      train: "../data/processed/aircraft_crop/train"
-      val: "../data/processed/aircraft_crop/val"
-      test: "../data/processed/aircraft_crop/test"
+    # 标注后的图片
+    labeled:
+      images: "../data/processed/labeled/images"
 
   # 注册号数据
   registration:
     area: "../data/processed/labeled/registration/registration_area"
-    crops: "../data/registration/crops"
-
 
 # 标注文件路径
 labels:
-  root: "../data/processed/labeled"
-  # 主标注文件（实际位置）
+  # 主标注文件
   main: "../data/processed/labeled/labels.csv"
-  # 类别映射文件
-  type_classes: "../data/processed/labeled/type_classes.json"
-  airline_classes: "../data/processed/labeled/airline_classes.json"
-  # 数据集划分后的标注文件（会在split后生成）
-  train: "../data/processed/labeled/splits/train.csv"
-  val: "../data/processed/labeled/splits/val.csv"
-  test: "../data/processed/labeled/splits/test.csv"
-  # 注册号标注（YOLO格式）
-  registration: "../data/processed/labeled/registration/registration_area"
 
 # 模型文件路径
 path_models:
-  root: "../model"
-  # 预训练模型（YOLOv8 分类）
   pretrained:
-    yolov8n_cls: "../model/yolov8n-cls.pt"
-    yolov8s_cls: "../model/yolov8s-cls.pt"
-    yolov8m_cls: "../model/yolov8m-cls.pt"
-    yolov8l_cls: "../model/yolov8l-cls.pt"
-    yolov8x_cls: "../model/yolov8x-cls.pt"
-    # 检测模型
-    yolov8n: "../model/yolov8n.pt"
-    yolov8s: "../model/yolov8s.pt"
     yolov8m: "../model/yolov8m.pt"
-    yolov8l: "../model/yolov8l.pt"
-    yolov8x: "../model/yolov8x.pt"
-  # 训练好的模型
-  trained:
-    aircraft_detector: "../model/aircraft_detector.pt"
-    type_classifier: "../model/type_classifier.pth"
-    registration_detector: "../model/registration_detector.pt"
-
-# 检查点路径
-checkpoints:
-  root: "../ckpt"
-  # 各任务检查点
-  classify: "../ckpt/classify"
-  airline: "../ckpt/airline"
-  detection: "../ckpt/detection"
-  ocr: "../ckpt/ocr"
-
-  # 兼容旧的 stage 命名（已废弃）
-  stage1: "../ckpt/stage1"
-  stage2: "../ckpt/classify"
-  stage3: "../ckpt/stage3"
-  stage4: "../ckpt/stage4"
-  stage5: "../ckpt/stage5"
-  stage6: "../ckpt/detection"
 
 # 日志路径
 logs:
   root: "../logs"
-  # 分类训练日志
-  classify: "../logs/classify"
-  # 航司识别训练日志
-  airline: "../logs/airline"
-  # 检测训练日志
-  detection: "../logs/detection"
-  # OCR训练日志
-  ocr: "../logs/ocr"
-  # TensorBoard日志
-  tensorboard: "../logs/tensorboard"
-  # WandB日志
-  wandb: "../logs/wandb"
-  # 审查日志
-  review: "../logs/review"
-  # 输出文件模板
   crop_review: "../logs/crop_review_{timestamp}.png"
-
-# 训练输出路径
-path_output:
-  root: "../output"
-  # 分类训练输出
-  classify: "../output/classify"
-  # 航司识别训练输出
-  airline: "../output/airline"
-  # 检测训练输出
-  detection: "../output/detection"
-  # OCR训练输出
-  ocr: "../output/ocr"
