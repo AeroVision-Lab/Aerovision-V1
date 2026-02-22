@@ -27,12 +27,30 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 
+try:
+    import questionary
+    from questionary import Style
+    HAS_QUESTIONARY = True
+except ImportError:
+    HAS_QUESTIONARY = False
+
+try:
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.progress import Progress, SpinnerColumn, TextColumn
+    from rich.table import Table
+    from rich import box
+    HAS_RICH = True
+except ImportError:
+    HAS_RICH = False
+
 
 class WorkflowRunner:
     """训练流程执行器"""
 
-    def __init__(self, verbose: bool = False):
+    def __init__(self, verbose: bool = False, use_tui: bool = False):
         self.verbose = verbose
+        self.use_tui = use_tui and HAS_RICH
         self.training_root = Path(__file__).parent
         self.scripts_dir = self.training_root / "scripts"
         self.logger = self._setup_logger()
@@ -40,6 +58,12 @@ class WorkflowRunner:
         # 检测操作系统
         self.is_windows = sys.platform.startswith('win')
         self.python_cmd = "python" if self.is_windows else "python3"
+
+        # Rich console
+        if self.use_tui:
+            self.console = Console()
+        else:
+            self.console = None
 
     def _setup_logger(self) -> logging.Logger:
         """设置日志"""
@@ -76,7 +100,10 @@ class WorkflowRunner:
             是否成功
         """
         if description:
-            self.logger.info(f"[执行] {description}")
+            if self.use_tui and self.console:
+                self.console.print(f"[bold cyan]▶[/bold cyan] {description}")
+            else:
+                self.logger.info(f"[执行] {description}")
 
         if self.verbose:
             self.logger.debug(f"命令: {' '.join(cmd)}")
@@ -94,11 +121,17 @@ class WorkflowRunner:
             if self.verbose and result.stdout:
                 self.logger.debug(f"输出:\n{result.stdout}")
 
-            self.logger.info(f"[成功] {description or '命令执行成功'}")
+            if self.use_tui and self.console:
+                self.console.print(f"[bold green]✓[/bold green] {description or '命令执行成功'}")
+            else:
+                self.logger.info(f"[成功] {description or '命令执行成功'}")
             return True
 
         except subprocess.CalledProcessError as e:
-            self.logger.error(f"[失败] {description or '命令执行失败'}")
+            if self.use_tui and self.console:
+                self.console.print(f"[bold red]✗[/bold red] {description or '命令执行失败'}")
+            else:
+                self.logger.error(f"[失败] {description or '命令执行失败'}")
             if e.stdout:
                 self.logger.error(f"标准输出:\n{e.stdout}")
             if e.stderr:
@@ -106,21 +139,39 @@ class WorkflowRunner:
             return False
 
         except Exception as e:
-            self.logger.error(f"[异常] {description}: {e}")
+            if self.use_tui and self.console:
+                self.console.print(f"[bold red]✗[/bold red] {description}: {e}")
+            else:
+                self.logger.error(f"[异常] {description}: {e}")
             return False
 
     def verify_environment(self) -> bool:
         """验证环境"""
-        self.logger.info("=" * 70)
-        self.logger.info("验证环境")
-        self.logger.info("=" * 70)
+        if self.use_tui and self.console:
+            self.console.print(Panel.fit(
+                "[bold cyan]验证环境[/bold cyan]",
+                border_style="cyan"
+            ))
+        else:
+            self.logger.info("=" * 70)
+            self.logger.info("验证环境")
+            self.logger.info("=" * 70)
 
         # 检查 Python 版本
         python_version = sys.version_info
-        self.logger.info(f"Python 版本: {python_version.major}.{python_version.minor}.{python_version.micro}")
+        version_str = f"Python 版本: {python_version.major}.{python_version.minor}.{python_version.micro}"
+
+        if self.use_tui and self.console:
+            self.console.print(f"[cyan]{version_str}[/cyan]")
+        else:
+            self.logger.info(version_str)
 
         if python_version < (3, 11):
-            self.logger.warning("建议使用 Python 3.11+")
+            warning = "建议使用 Python 3.11+"
+            if self.use_tui and self.console:
+                self.console.print(f"[yellow]⚠ {warning}[/yellow]")
+            else:
+                self.logger.warning(warning)
 
         # 验证配置系统
         verify_script = self.training_root / "verify_configs.py"
@@ -133,9 +184,14 @@ class WorkflowRunner:
                 self.logger.error("配置验证失败，请检查配置文件")
                 return False
         else:
-            self.logger.warning("未找到配置验证脚本")
+            warning = "未找到配置验证脚本"
+            if self.use_tui and self.console:
+                self.console.print(f"[yellow]⚠ {warning}[/yellow]")
+            else:
+                self.logger.warning(warning)
 
-        self.logger.info("")
+        if not self.use_tui:
+            self.logger.info("")
         return True
 
     def prepare_data(self, args: argparse.Namespace) -> bool:
@@ -278,6 +334,203 @@ class WorkflowRunner:
         return True
 
 
+def interactive_workflow() -> argparse.Namespace:
+    """交互式 TUI 界面"""
+    if not HAS_QUESTIONARY:
+        print("错误: 需要安装 questionary 库")
+        print("运行: pip install questionary")
+        sys.exit(1)
+
+    console = Console() if HAS_RICH else None
+
+    # 自定义样式
+    custom_style = Style([
+        ('qmark', 'fg:#673ab7 bold'),
+        ('question', 'bold'),
+        ('answer', 'fg:#2196f3 bold'),
+        ('pointer', 'fg:#673ab7 bold'),
+        ('highlighted', 'fg:#673ab7 bold'),
+        ('selected', 'fg:#4caf50'),
+        ('separator', 'fg:#cc5454'),
+        ('instruction', ''),
+        ('text', ''),
+    ])
+
+    if console:
+        console.print(Panel.fit(
+            "[bold cyan]AeroVision 训练流程[/bold cyan]\n"
+            "[dim]交互式配置向导[/dim]",
+            border_style="cyan",
+            box=box.DOUBLE
+        ))
+    else:
+        print("=" * 70)
+        print("AeroVision 训练流程 - 交互式配置向导")
+        print("=" * 70)
+        print()
+
+    # 1. 选择工作流
+    workflow = questionary.select(
+        "选择工作流类型:",
+        choices=[
+            questionary.Choice("完整流程 (验证 + 准备数据 + 训练所有模型)", value="full"),
+            questionary.Choice("仅验证环境", value="verify"),
+            questionary.Choice("仅准备数据", value="prepare"),
+            questionary.Choice("训练单个模型", value="train"),
+            questionary.Choice("训练所有模型", value="train-all"),
+        ],
+        style=custom_style
+    ).ask()
+
+    if workflow is None:
+        sys.exit(0)
+
+    args = argparse.Namespace(
+        workflow=workflow,
+        task=None,
+        labels=None,
+        images=None,
+        prepare_dir=None,
+        skip_prepare=False,
+        skip_split=False,
+        epochs=None,
+        batch_size=None,
+        imgsz=None,
+        lr0=None,
+        device=None,
+        model=None,
+        resume=None,
+        verbose=False,
+        continue_on_error=False,
+    )
+
+    # 2. 如果是 train workflow，选择任务
+    if workflow == "train":
+        task = questionary.select(
+            "选择训练任务:",
+            choices=[
+                questionary.Choice("飞机分类 (classify)", value="classify"),
+                questionary.Choice("航司识别 (airline)", value="airline"),
+                questionary.Choice("注册号检测 (detection)", value="detection"),
+            ],
+            style=custom_style
+        ).ask()
+
+        if task is None:
+            sys.exit(0)
+
+        args.task = task
+
+    # 3. 数据准备选项 (如果是 prepare 或 full)
+    if workflow in ["prepare", "full"]:
+        skip_prepare = questionary.confirm(
+            "跳过数据准备步骤?",
+            default=False,
+            style=custom_style
+        ).ask()
+
+        skip_split = questionary.confirm(
+            "跳过数据划分步骤?",
+            default=False,
+            style=custom_style
+        ).ask()
+
+        args.skip_prepare = skip_prepare
+        args.skip_split = skip_split
+
+    # 4. 训练参数 (如果涉及训练)
+    if workflow in ["train", "train-all", "full"]:
+        configure_training = questionary.confirm(
+            "配置训练参数? (否则使用默认值)",
+            default=False,
+            style=custom_style
+        ).ask()
+
+        if configure_training:
+            epochs = questionary.text(
+                "训练轮数 (epochs):",
+                default="100",
+                validate=lambda x: x.isdigit() and int(x) > 0,
+                style=custom_style
+            ).ask()
+
+            batch_size = questionary.text(
+                "批次大小 (batch-size):",
+                default="32",
+                validate=lambda x: x.isdigit() and int(x) > 0,
+                style=custom_style
+            ).ask()
+
+            device = questionary.select(
+                "训练设备:",
+                choices=[
+                    questionary.Choice("GPU 0", value="0"),
+                    questionary.Choice("GPU 1", value="1"),
+                    questionary.Choice("CPU", value="cpu"),
+                ],
+                style=custom_style
+            ).ask()
+
+            args.epochs = int(epochs) if epochs else None
+            args.batch_size = int(batch_size) if batch_size else None
+            args.device = device
+
+    # 5. 其他选项
+    if workflow in ["train-all", "full"]:
+        continue_on_error = questionary.confirm(
+            "出错时继续执行?",
+            default=False,
+            style=custom_style
+        ).ask()
+
+        args.continue_on_error = continue_on_error
+
+    verbose = questionary.confirm(
+        "显示详细输出?",
+        default=False,
+        style=custom_style
+    ).ask()
+
+    args.verbose = verbose
+
+    # 显示配置摘要
+    if console:
+        table = Table(title="配置摘要", box=box.ROUNDED, border_style="cyan")
+        table.add_column("参数", style="cyan", no_wrap=True)
+        table.add_column("值", style="green")
+
+        table.add_row("工作流", workflow)
+        if args.task:
+            table.add_row("任务", args.task)
+        if args.epochs:
+            table.add_row("训练轮数", str(args.epochs))
+        if args.batch_size:
+            table.add_row("批次大小", str(args.batch_size))
+        if args.device:
+            table.add_row("设备", args.device)
+        table.add_row("详细输出", "是" if args.verbose else "否")
+
+        console.print()
+        console.print(table)
+        console.print()
+
+    # 确认执行
+    confirm = questionary.confirm(
+        "开始执行?",
+        default=True,
+        style=custom_style
+    ).ask()
+
+    if not confirm:
+        if console:
+            console.print("[yellow]已取消[/yellow]")
+        else:
+            print("已取消")
+        sys.exit(0)
+
+    return args
+
+
 def parse_arguments() -> argparse.Namespace:
     """解析命令行参数"""
     parser = argparse.ArgumentParser(
@@ -307,9 +560,16 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--workflow",
         type=str,
-        required=True,
+        required=False,
         choices=["full", "verify", "prepare", "train", "train-all"],
         help="工作流类型"
+    )
+
+    # TUI 模式
+    parser.add_argument(
+        "--tui",
+        action="store_true",
+        help="使用交互式 TUI 界面"
     )
 
     # 任务选择 (用于 train workflow)
@@ -401,10 +661,24 @@ def parse_arguments() -> argparse.Namespace:
 
 def main():
     """主函数"""
-    args = parse_arguments()
+    # 检查是否使用 TUI 模式
+    if "--tui" in sys.argv or (len(sys.argv) == 1 and HAS_QUESTIONARY):
+        # 交互式 TUI 模式
+        args = interactive_workflow()
+        use_tui = True
+    else:
+        # 命令行模式
+        args = parse_arguments()
+        use_tui = False
+
+        # 检查 workflow 参数
+        if not args.workflow:
+            print("错误: 需要指定 --workflow 参数或使用 --tui 进入交互式模式")
+            print("运行 'python run_workflow.py --help' 查看帮助")
+            sys.exit(1)
 
     # 创建工作流执行器
-    runner = WorkflowRunner(verbose=args.verbose)
+    runner = WorkflowRunner(verbose=args.verbose, use_tui=use_tui)
 
     # 执行工作流
     success = False
@@ -443,10 +717,22 @@ def main():
 
     # 退出
     if success:
-        runner.logger.info("工作流执行成功")
+        if runner.use_tui and runner.console:
+            runner.console.print(Panel.fit(
+                "[bold green]✓ 工作流执行成功[/bold green]",
+                border_style="green"
+            ))
+        else:
+            runner.logger.info("工作流执行成功")
         sys.exit(0)
     else:
-        runner.logger.error("工作流执行失败")
+        if runner.use_tui and runner.console:
+            runner.console.print(Panel.fit(
+                "[bold red]✗ 工作流执行失败[/bold red]",
+                border_style="red"
+            ))
+        else:
+            runner.logger.error("工作流执行失败")
         sys.exit(1)
 
 
