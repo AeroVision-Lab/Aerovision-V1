@@ -608,6 +608,47 @@ def interactive_workflow() -> argparse.Namespace:
         ).ask()
 
         if configure_training:
+            # 模型选择
+            if task == "classify":
+                model_choices = [
+                    questionary.Choice("YOLO26x-cls (最大，精度优先) [默认]", value="yolo26x-cls.pt"),
+                    questionary.Choice("YOLO26l-cls (大型)", value="yolo26l-cls.pt"),
+                    questionary.Choice("YOLO26m-cls (中型)", value="yolo26m-cls.pt"),
+                    questionary.Choice("YOLO26s-cls (小型)", value="yolo26s-cls.pt"),
+                    questionary.Choice("YOLO26n-cls (最小，速度优先)", value="yolo26n-cls.pt"),
+                    questionary.Choice("使用配置文件默认值", value=None),
+                ]
+                model_prompt = "选择机型分类模型:"
+            elif task == "airline":
+                model_choices = [
+                    questionary.Choice("YOLO26m-cls (中型，平衡) [默认]", value="yolo26m-cls.pt"),
+                    questionary.Choice("YOLO26x-cls (最大，精度优先)", value="yolo26x-cls.pt"),
+                    questionary.Choice("YOLO26l-cls (大型)", value="yolo26l-cls.pt"),
+                    questionary.Choice("YOLO26s-cls (小型)", value="yolo26s-cls.pt"),
+                    questionary.Choice("YOLO26n-cls (最小，速度优先)", value="yolo26n-cls.pt"),
+                    questionary.Choice("使用配置文件默认值", value=None),
+                ]
+                model_prompt = "选择航司识别模型:"
+            elif task == "detection":
+                model_choices = [
+                    questionary.Choice("YOLO26x (最大，精度优先) [默认]", value="yolo26x.pt"),
+                    questionary.Choice("YOLO26l (大型)", value="yolo26l.pt"),
+                    questionary.Choice("YOLO26m (中型)", value="yolo26m.pt"),
+                    questionary.Choice("YOLO26s (小型)", value="yolo26s.pt"),
+                    questionary.Choice("YOLO26n (最小，速度优先)", value="yolo26n.pt"),
+                    questionary.Choice("使用配置文件默认值", value=None),
+                ]
+                model_prompt = "选择注册号检测模型:"
+            else:
+                model_choices = [questionary.Choice("使用配置文件默认值", value=None)]
+                model_prompt = "选择模型:"
+
+            model = questionary.select(
+                model_prompt,
+                choices=model_choices,
+                style=custom_style
+            ).ask()
+
             epochs = questionary.text(
                 "训练轮数 (epochs):",
                 default="100",
@@ -632,6 +673,7 @@ def interactive_workflow() -> argparse.Namespace:
                 style=custom_style
             ).ask()
 
+            args.model = model
             args.epochs = int(epochs) if epochs else None
             args.batch_size = int(batch_size) if batch_size else None
             args.device = device
@@ -663,6 +705,10 @@ def interactive_workflow() -> argparse.Namespace:
         table.add_row("工作流", workflow)
         if args.task:
             table.add_row("任务", args.task)
+        if hasattr(args, 'model') and args.model:
+            table.add_row("模型", args.model)
+        elif hasattr(args, 'model') and args.model is None:
+            table.add_row("模型", "配置文件默认值")
         if args.epochs:
             table.add_row("训练轮数", str(args.epochs))
         if args.batch_size:

@@ -21,6 +21,9 @@ data:
     # 标注后的图片
     labeled:
       images: "../data/processed/labeled/images"
+  
+  splits:
+    root: "../data/splits"
 
   # 注册号数据
   registration:
@@ -30,11 +33,6 @@ data:
 labels:
   # 主标注文件
   main: "../data/processed/labeled/labels.csv"
-
-# 模型文件路径
-path_models:
-  pretrained:
-    yolov8m: "../model/yolov8m.pt"
 
 # 日志路径
 logs:

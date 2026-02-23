@@ -39,7 +39,7 @@ from typing import Any, Dict, Optional
 import torch
 
 # Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from configs import load_config, setup_logger
 
 from ultralytics import YOLO
@@ -324,8 +324,8 @@ class AirlineClassifierTrainer:
         self.args = args
         self.logger = logger
 
-        # Get training root directory (parent of scripts/)
-        self.training_root = Path(__file__).parent.parent
+        # Get training root directory (training/)
+        self.training_root = Path(__file__).parent.parent.parent
 
         # Generate timestamp for this training session
         self.timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -622,7 +622,7 @@ def main() -> None:
     5. Initializes and runs the trainer
     """
     # Set environment variables for YOLO download paths
-    training_root = Path(__file__).parent.parent
+    training_root = Path(__file__).parent.parent.parent
     model_dir = training_root / 'model'
     model_dir.mkdir(parents=True, exist_ok=True)
 
@@ -672,10 +672,12 @@ def main() -> None:
         data_path = '../data/splits/latest/aerovision/airline'
 
     # Extract training configuration with defaults
-    # Priority: command-line args > config yaml > defaults
+    # 优先级：命令行参数 > config yaml > 默认值
     config = {
-        # Model configuration
-        'model': args.model or config_obj.get('airline_training.model.name') or 'yolov8m-cls.pt',
+        # Model configuration - 航司识别专用模型
+        'model': args.model
+        or config_obj.get('training.model.airline')
+        or 'yolo26m-cls.pt',
         'resume': args.resume or config_obj.get('airline_training.resume') or None,
 
         # Data configuration

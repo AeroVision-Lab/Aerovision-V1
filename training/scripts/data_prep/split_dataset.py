@@ -55,7 +55,8 @@ import pandas as pd
 import yaml
 
 # 添加 configs 模块路径
-sys.path.insert(0, str(Path(__file__).parent.parent))
+print(str(Path(__file__)))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from configs import load_config
 
 # 配置日志

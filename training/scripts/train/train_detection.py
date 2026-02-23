@@ -37,7 +37,7 @@ from typing import Any, Dict
 import torch
 
 # Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from configs import load_config, setup_logger
 
 from ultralytics import YOLO
@@ -201,7 +201,7 @@ class RegistrationDetectorTrainer:
         self.config = config
         self.logger = logger
 
-        self.training_root = Path(__file__).parent.parent
+        self.training_root = Path(__file__).parent.parent.parent
         self.timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 
         # Setup checkpoint directory
@@ -331,7 +331,7 @@ class RegistrationDetectorTrainer:
 
 def main() -> None:
     """Main entry point for the training script."""
-    training_root = Path(__file__).parent.parent
+    training_root = Path(__file__).parent.parent.parent
     model_dir = training_root / 'model'
     model_dir.mkdir(parents=True, exist_ok=True)
 
@@ -388,28 +388,28 @@ def main() -> None:
         data_path = resolve_config_path(data_path)
 
     # Build configuration
-    model_size = args.model_size
-    model_name = args.model or f'yolov8{model_size}.pt'
+    # 注册号检测专用模型
+    model_name = args.model or config_obj.get('training.model.detection') or 'yolo26x.pt'
 
     config = {
         'model': model_name,
         'resume': args.resume,
         'data': data_path,
-        'epochs': config_obj.get('training.epochs') or args.epochs or 100,
-        'batch_size': config_obj.get('training.batch_size') or args.batch_size or 16,
-        'imgsz': config_obj.get('training.image_size') or args.imgsz or 640,
-        'lr0': config_obj.get('training.optimizer.lr0') or args.lr0 or 0.01,
-        'optimizer': config_obj.get('training.optimizer.type') or args.optimizer or 'auto',
-        'momentum': config_obj.get('training.optimizer.momentum') or args.momentum or 0.937,
-        'weight_decay': config_obj.get('training.optimizer.weight_decay') or args.weight_decay or 0.0005,
-        'patience': config_obj.get('training.early_stopping.patience') or args.patience or 20,
-        'device': config_obj.get('device.default') or args.device or '0',
-        'workers': config_obj.get('training.workers') or args.workers or 8,
-        'seed': config_obj.get('seed.random') or args.seed or 42,
-        'project': resolve_config_path(config_obj.get('training.output.project') or '../output/detection'),
+        'epochs': args.epochs or config_obj.get('training.epochs') or 100,
+        'batch_size': args.batch_size or config_obj.get('training.batch_size') or 16,
+        'imgsz': args.imgsz or config_obj.get('training.image_size') or 640,
+        'lr0': args.lr0 or config_obj.get('training.optimizer.lr0') or 0.01,
+        'optimizer': args.optimizer or config_obj.get('training.optimizer.type') or 'auto',
+        'momentum': args.momentum or config_obj.get('training.optimizer.momentum') or 0.937,
+        'weight_decay': args.weight_decay or config_obj.get('training.optimizer.weight_decay') or 0.0005,
+        'patience': args.patience or config_obj.get('training.early_stopping.patience') or 20,
+        'device': args.device or config_obj.get('device.default') or '0',
+        'workers': args.workers or config_obj.get('training.workers') or 8,
+        'seed': args.seed or config_obj.get('seed.random') or 42,
+        'project': resolve_config_path(args.project or config_obj.get('training.output.project') or '../output/detection'),
         'name': f"registration_detector_{timestamp}",
         'save_period': args.save_period or 10,
-        'checkpoint_dir': config_obj.get('checkpoints.detection') or '../ckpt/detection',
+        'checkpoint_dir': args.checkpoint_dir or config_obj.get('checkpoints.detection') or '../ckpt/detection',
     }
 
     # Setup logging

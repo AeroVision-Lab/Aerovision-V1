@@ -416,7 +416,7 @@ def main() -> None:
     logger.info("=" * 60)
 
     # Get training root directory
-    training_root = Path(__file__).parent.parent
+    training_root = Path(__file__).parent.parent.parent
 
     # Determine model path
     if args.model:

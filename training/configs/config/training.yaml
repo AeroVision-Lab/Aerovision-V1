@@ -1,6 +1,6 @@
 # YOLOv8 训练配置
 # ⚠️ 重要：相对路径相对于 /training/configs 目录
-# 本配置适配 train_classify.py (YOLOv8 分类训练脚本)
+# 本配置适配 train_classify.py (机型分类训练脚本)
 
 training:
   # 训练轮数
@@ -52,8 +52,14 @@ training:
 
   # 模型配置
   model:
-    # YOLOv8 预训练模型名称或路径
-    name: "yolo26x-cls.pt"
+    # 机型分类任务：使用 YOLO26x 最大模型（精度优先）
+    classify: "yolo26x-cls.pt"
+
+    # 航司识别任务：使用 YOLO26m 中型模型（平衡速度和精度）
+    airline: "yolo26m-cls.pt"
+
+    # 注册号检测任务：使用 YOLO26x 大型模型（精度优先，检测任务相对复杂）
+    detection: "yolo26x.pt"
 
   # 优化器配置
   optimizer:
@@ -151,27 +157,3 @@ custom_model:
     hidden_dim: 512
     dropout: 0.1
     num_layers: 2
-
-# Stage特定配置
-stage_configs:
-  # Stage 2: 单模型单任务（机型分类）
-  stage2:
-    num_classes: null  # null表示从数据集自动推断类别数
-    loss: "cross_entropy"
-
-  # Stage 3: 单模型多Head（机型+航司）
-  stage3:
-    num_type_classes: null  # null表示从数据集自动推断机型类别数
-    num_airline_classes: null  # null表示从数据集自动推断航司类别数
-    shared_backbone: true
-
-  # Stage 4: 加清晰度Head
-  stage4:
-    quality_head: true
-    quality_loss: "mse"
-
-  # Stage 5: 模型杂交（ConvNeXt + Swin）
-  stage5:
-    use_ensemble: true
-    ensemble_method: "weighted_avg"  # weighted_avg, voting, stacking
-    model_weights: [0.5, 0.5]
