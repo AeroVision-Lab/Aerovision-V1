@@ -29,6 +29,7 @@ def setup_logger(
     config: Optional[Config] = None,
     console_level: Optional[str] = None,
     file_level: Optional[str] = None,
+    silent: bool = False,
 ) -> logging.Logger:
     """
     设置统一的日志记录器
@@ -39,6 +40,7 @@ def setup_logger(
         config: 配置对象 (可选,用于读取日志配置)
         console_level: 控制台日志级别 (可选,覆盖配置)
         file_level: 文件日志级别 (可选,覆盖配置)
+        silent: 是否静默模式 (不输出日志文件路径信息)
 
     Returns:
         配置好的 Logger 实例
@@ -86,6 +88,7 @@ def setup_logger(
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
 
-        logger.info(f"日志文件: {log_file}")
+        if not silent:
+            logger.info(f"日志文件: {log_file}")
 
     return logger

@@ -57,7 +57,7 @@ class WorkflowRunner:
 
         # 检测操作系统
         self.is_windows = sys.platform.startswith('win')
-        self.python_cmd = "python" if self.is_windows else "python3"
+        self.python_cmd = sys.executable
 
         # Rich console
         if self.use_tui:
@@ -157,23 +157,136 @@ class WorkflowRunner:
             self.logger.info("验证环境")
             self.logger.info("=" * 70)
 
-        # 检查 Python 版本
+        all_passed = True
+
+        # 1. 检查 Python 版本
         python_version = sys.version_info
-        version_str = f"Python 版本: {python_version.major}.{python_version.minor}.{python_version.micro}"
+        version_str = f"{python_version.major}.{python_version.minor}.{python_version.micro}"
 
         if self.use_tui and self.console:
-            self.console.print(f"[cyan]{version_str}[/cyan]")
+            if python_version >= (3, 8):
+                self.console.print(f"[green]✓[/green] Python 版本: {version_str}")
+            else:
+                self.console.print(f"[red]✗[/red] Python 版本: {version_str} (需要 >= 3.8)")
+                all_passed = False
         else:
-            self.logger.info(version_str)
+            self.logger.info(f"Python 版本: {version_str}")
 
         if python_version < (3, 11):
             warning = "建议使用 Python 3.11+"
             if self.use_tui and self.console:
-                self.console.print(f"[yellow]⚠ {warning}[/yellow]")
+                self.console.print(f"[yellow]⚠[/yellow] {warning}")
             else:
                 self.logger.warning(warning)
 
-        # 验证配置系统
+        # 2. 检查 PyTorch 和 CUDA
+        try:
+            import torch
+
+            torch_version = torch.__version__
+            cuda_available = torch.cuda.is_available()
+
+            if self.use_tui and self.console:
+                self.console.print(f"[green]✓[/green] PyTorch 版本: {torch_version}")
+                self.console.print(f"[green]✓[/green] CUDA 可用: {cuda_available}")
+            else:
+                self.logger.info(f"PyTorch 版本: {torch_version}")
+                self.logger.info(f"CUDA 可用: {cuda_available}")
+
+            if cuda_available:
+                cuda_version = torch.version.cuda
+                gpu_count = torch.cuda.device_count()
+
+                if self.use_tui and self.console:
+                    self.console.print(f"[green]✓[/green] CUDA 版本: {cuda_version}")
+                    self.console.print(f"[green]✓[/green] GPU 数量: {gpu_count}")
+                else:
+                    self.logger.info(f"CUDA 版本: {cuda_version}")
+                    self.logger.info(f"GPU 数量: {gpu_count}")
+
+                # 显示每个 GPU 的信息
+                for i in range(gpu_count):
+                    gpu_name = torch.cuda.get_device_name(i)
+                    props = torch.cuda.get_device_properties(i)
+                    gpu_memory = props.total_memory / (1024 ** 3)
+
+                    if self.use_tui and self.console:
+                        self.console.print(
+                            f"[cyan]  GPU {i}:[/cyan] {gpu_name} "
+                            f"({gpu_memory:.1f}GB, 计算能力 {props.major}.{props.minor})"
+                        )
+                    else:
+                        self.logger.info(
+                            f"  GPU {i}: {gpu_name} "
+                            f"({gpu_memory:.1f}GB, 计算能力 {props.major}.{props.minor})"
+                        )
+
+                # 测试 GPU 运算
+                try:
+                    x = torch.randn(100, 100).cuda()
+                    y = torch.randn(100, 100).cuda()
+                    z = torch.matmul(x, y)
+
+                    if self.use_tui and self.console:
+                        self.console.print(f"[green]✓[/green] GPU 运算测试通过")
+                    else:
+                        self.logger.info("GPU 运算测试通过")
+                except Exception as e:
+                    if self.use_tui and self.console:
+                        self.console.print(f"[red]✗[/red] GPU 运算测试失败: {e}")
+                    else:
+                        self.logger.error(f"GPU 运算测试失败: {e}")
+                    all_passed = False
+            else:
+                warning = "CUDA 不可用，将使用 CPU 训练（速度较慢）"
+                if self.use_tui and self.console:
+                    self.console.print(f"[yellow]⚠[/yellow] {warning}")
+                else:
+                    self.logger.warning(warning)
+
+        except ImportError:
+            error = "PyTorch 未安装"
+            if self.use_tui and self.console:
+                self.console.print(f"[red]✗[/red] {error}")
+            else:
+                self.logger.error(error)
+            all_passed = False
+
+        # 3. 检查关键依赖包
+        packages = [
+            ("ultralytics", "ultralytics"),
+            ("paddleocr", "paddleocr"),
+            ("albumentations", "albumentations"),
+            ("pandas", "pandas"),
+            ("pyyaml", "yaml"),
+        ]
+
+        missing_packages = []
+        for package_name, import_name in packages:
+            try:
+                module = __import__(import_name)
+                version = getattr(module, '__version__', 'unknown')
+
+                if self.use_tui and self.console:
+                    self.console.print(f"[green]✓[/green] {package_name}: {version}")
+                else:
+                    self.logger.info(f"{package_name}: {version}")
+            except ImportError:
+                missing_packages.append(package_name)
+                if self.use_tui and self.console:
+                    self.console.print(f"[red]✗[/red] {package_name}: 未安装")
+                else:
+                    self.logger.error(f"{package_name}: 未安装")
+                all_passed = False
+
+        if missing_packages:
+            install_cmd = f"pip install {' '.join(missing_packages)}"
+            if self.use_tui and self.console:
+                self.console.print(f"[yellow]提示:[/yellow] {install_cmd}")
+            else:
+                self.logger.warning(f"安装缺失的包: {install_cmd}")
+
+        # 4. 验证配置系统
         verify_script = self.training_root / "verify_configs.py"
         if verify_script.exists():
             success = self.run_command(
@@ -182,17 +295,65 @@ class WorkflowRunner:
             )
             if not success:
                 self.logger.error("配置验证失败，请检查配置文件")
-                return False
+                all_passed = False
         else:
             warning = "未找到配置验证脚本"
             if self.use_tui and self.console:
-                self.console.print(f"[yellow]⚠ {warning}[/yellow]")
+                self.console.print(f"[yellow]⚠[/yellow] {warning}")
             else:
                 self.logger.warning(warning)
 
-        if not self.use_tui:
+        # 5. 检查目录结构
+        required_dirs = [
+            "data/processed",
+            "data/processed/labeled",
+            "ckpt",
+            "logs",
+            "configs",
+            "scripts",
+        ]
+
+        missing_dirs = []
+        for dir_path in required_dirs:
+            full_path = self.training_root / dir_path
+            if full_path.exists():
+                if self.use_tui and self.console:
+                    self.console.print(f"[green]✓[/green] {dir_path}/")
+                else:
+                    self.logger.debug(f"{dir_path}/ 存在")
+            else:
+                missing_dirs.append(dir_path)
+                if self.use_tui and self.console:
+                    self.console.print(f"[yellow]⚠[/yellow] {dir_path}/ (不存在)")
+                else:
+                    self.logger.warning(f"{dir_path}/ 不存在")
+
+        # 6. 显示摘要
+        if self.use_tui and self.console:
+            self.console.print()
+            if all_passed and not missing_dirs:
+                self.console.print(Panel.fit(
+                    "[bold green]✓ 环境验证通过！可以开始训练。[/bold green]",
+                    border_style="green"
+                ))
+            elif all_passed:
+                self.console.print(Panel.fit(
+                    "[bold yellow]⚠ 环境验证通过，但有些目录不存在（不影响使用）[/bold yellow]",
+                    border_style="yellow"
+                ))
+            else:
+                self.console.print(Panel.fit(
+                    "[bold red]✗ 环境验证失败，请修复上述问题[/bold red]",
+                    border_style="red"
+                ))
+        else:
+            if all_passed:
+                self.logger.info("环境验证通过")
+            else:
+                self.logger.error("环境验证失败")
             self.logger.info("")
-        return True
+
+        return all_passed
 
     def prepare_data(self, args: argparse.Namespace) -> bool:
         """准备数据"""

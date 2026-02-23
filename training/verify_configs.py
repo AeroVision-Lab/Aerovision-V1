@@ -55,7 +55,7 @@ class ConfigVerifier:
         self.verify_training_scripts()
 
         # 输出结果
-        self.print_results()
+        return self.print_results()
 
     def verify_config_loading(self):
         """验证配置文件能否正常加载"""
@@ -187,16 +187,28 @@ class ConfigVerifier:
         try:
             config = load_config()
 
-            # 创建临时日志目录
+            # 显示配置的日志路径
+            configured_log_path = config.get('logs.root', '../logs')
+            try:
+                actual_log_path = config.get_path('logs.root')
+                print(f"   配置的日志路径: {configured_log_path}")
+                print(f"   实际日志路径: {actual_log_path}")
+                self.passed.append(f"[OK] 日志路径配置正确: {actual_log_path}")
+            except Exception as e:
+                self.warnings.append(f"[WARN] 无法解析日志路径: {e}")
+
+            # 创建临时日志目录进行功能测试
             import tempfile
+
             with tempfile.TemporaryDirectory() as tmpdir:
                 log_dir = Path(tmpdir) / "test_logs"
 
-                # 测试 setup_logger
+                # 测试 setup_logger (使用 silent=True 避免输出临时路径)
                 logger = setup_logger(
                     name="TestLogger",
                     log_dir=log_dir,
-                    config=config
+                    config=config,
+                    silent=True
                 )
 
                 # 测试日志输出
@@ -211,7 +223,7 @@ class ConfigVerifier:
                 # 检查日志文件是否创建
                 log_files = list(log_dir.glob("*.log"))
                 if log_files:
-                    self.passed.append(f"[OK] Logger 工作正常,日志文件已创建: {log_files[0].name}")
+                    self.passed.append(f"[OK] Logger 功能测试通过")
                 else:
                     self.errors.append("[X] Logger 未创建日志文件")
 

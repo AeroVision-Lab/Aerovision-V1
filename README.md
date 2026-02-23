@@ -50,10 +50,11 @@
 - 8GB+ GPU 显存
 
 **安装依赖**:
+**安装依赖**:
 ```bash
-cd training
 pip install -r requirements.txt
-```
+
+cd training
 
 **验证环境**:
 ```bash
@@ -559,11 +560,11 @@ python verify_configs.py
 ```bash
 # YOLOv8 分类模型
 wget https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8m-cls.pt \
-     -O model/yolov8m-cls.pt
+     -O training/model/yolov8m-cls.pt
 
 # YOLOv8 检测模型
 wget https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8m.pt \
-     -O model/yolov8m.pt
+     -O training/model/yolov8m.pt
 ```
 
 ### Q: PaddleOCR 初始化慢
